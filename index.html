@@ -10,7 +10,7 @@
 
       /* Banner-inspired palette */
       --accent:#7c5cff;          /* purple */
-      --accent2:#f2c94c;         /* gold */
+      --accent2:#4da3ff;         /* blue */
       --text:rgba(255,255,255,.92);
       --muted:rgba(255,255,255,.66);
       --muted2:rgba(255,255,255,.54);
@@ -168,10 +168,10 @@
     .btn:hover{ background: rgba(255,255,255,.10); }
 
     .btnPrimary{
-      border: 1px solid rgba(242,201,76,.55);
-      background: rgba(242,201,76,.16);
-      font-weight: 850;
-    }
+       border: 1px solid color-mix(in srgb, var(--accent2) 60%, transparent);
+       background: color-mix(in srgb, var(--accent2) 18%, transparent);
+       font-weight: 850;
+     }
     .btnPrimary:hover{ filter: brightness(1.1); }
 
     /* Avatar strip */
