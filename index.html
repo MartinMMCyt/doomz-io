@@ -8,14 +8,13 @@
     :root{
       --bg:#0b0d12;
 
-      /* Inspired by your banner: deep purple + gold */
-      --accent:#7c5cff;          /* purple accent */
-      --accent2:#f2c94c;         /* gold-ish */
+      /* Banner-inspired palette */
+      --accent:#7c5cff;          /* purple */
+      --accent2:#f2c94c;         /* gold */
       --text:rgba(255,255,255,.92);
       --muted:rgba(255,255,255,.66);
       --muted2:rgba(255,255,255,.54);
       --border:rgba(255,255,255,.16);
-      --border2:rgba(255,255,255,.24);
       --shadow:0 18px 45px rgba(0,0,0,.48);
       --radius:18px;
 
@@ -37,18 +36,18 @@
     #unityContainer { position:relative; width:100%; height:100%; }
     canvas { width:100% !important; height:100% !important; display:block; }
 
-    /* Overlay: NOT full height; only what it needs */
+    /* Overlay: only as tall as needed */
     #discordOverlay {
       position: fixed;
       top: 14px;
       right: 14px;
-      width: 400px;
+      width: 410px;
       z-index: 9999;
-
       display: block;
+      pointer-events: auto;
     }
 
-    /* Hide completely (no toggle pill) */
+    /* Hide completely (no collapse pill) */
     body.discord-hidden #discordOverlay { display:none !important; }
 
     /* Hide on small screens */
@@ -71,9 +70,37 @@
       overflow: hidden;
     }
 
+    /* Banner-ish top */
+    #banner {
+      height: 86px;
+      position: relative;
+      background:
+        linear-gradient(90deg, rgba(124,92,255,.32), rgba(242,201,76,.18)),
+        radial-gradient(120% 140% at 20% 20%, rgba(124,92,255,.35), rgba(0,0,0,0) 60%),
+        radial-gradient(140% 120% at 90% 60%, rgba(242,201,76,.20), rgba(0,0,0,0) 65%),
+        rgba(0,0,0,.18);
+    }
+    /* Optional real banner file: put discord_banner.webp in repo root */
+    #banner::after{
+      content:"";
+      position:absolute; inset:0;
+      background-image: url("discord_banner.webp");
+      background-size: cover;
+      background-position: center;
+      opacity: .38;
+      filter: saturate(1.1) contrast(1.05);
+      pointer-events:none;
+    }
+    #banner::before{
+      content:"";
+      position:absolute; inset:0;
+      background: linear-gradient(180deg, rgba(0,0,0,.05), rgba(0,0,0,.55));
+      pointer-events:none;
+    }
+
     /* Header */
     #hero{
-      padding: 14px 14px 12px;
+      padding: 12px 14px 12px;
       border-bottom: 1px solid rgba(255,255,255,.10);
       background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,0));
     }
@@ -179,13 +206,13 @@
       font-size: 12px;
     }
 
-    /* Not full-height: cap the list so card stays compact */
+    /* cap list height so overlay stays compact */
     #members{
       border: 1px solid rgba(255,255,255,.10);
       background: rgba(0,0,0,.14);
       border-radius: 14px;
       overflow:auto;
-      max-height: 260px; /* <-- keeps overlay compact */
+      max-height: 260px;
     }
 
     .member{
@@ -247,11 +274,13 @@
   <!-- Glass overlay panel (picker screen only) -->
   <div id="discordOverlay" aria-label="Discord server panel overlay">
     <div class="card">
+      <div id="banner" aria-hidden="true"></div>
+
       <div id="hero">
         <div id="heroTop">
           <div style="min-width:0">
             <div id="guildName">Doomz.io 2</div>
-            <div id="tagline">Official community • events • updates • squads</div>
+            <div id="tagline">Community • updates • squads • events</div>
           </div>
           <div class="btnRow">
             <button class="btn" id="btnClose" title="Close until reload">✕</button>
@@ -260,7 +289,7 @@
 
         <div id="statsRow">
           <span class="pill"><span class="live"></span><span id="onlineCount">Online: …</span></span>
-          <span class="pill" id="widgetState">Widget: live</span>
+          <span class="pill" id="widgetState">Widget: loading…</span>
         </div>
       </div>
 
@@ -282,8 +311,8 @@
     </div>
   </div>
 
-  <!-- Chat sanitizer + entered-game detector -->
-  <script src="chat_sanitize.js"></script>
+  <!-- IMPORTANT: cache-bust this so GitHub Pages doesn't serve old versions -->
+  <script src="chat_sanitize.js?v=2026-02-27-1"></script>
 
   <!-- Unity loader -->
   <script src="doomz.js"></script>
@@ -298,7 +327,6 @@
     const membersEl = document.getElementById("members");
     const updatedAtEl = document.getElementById("updatedAt");
 
-    // Close until reload
     function closeOverlay() {
       document.body.classList.add("discord-hidden");
     }
@@ -308,10 +336,28 @@
       window.open(inviteUrl, "_blank", "noopener,noreferrer");
     });
 
-    // Entered game => remove everything (also prevents lingering 2s)
-    window.addEventListener("doomz:enteredGame", () => {
+    // ---- Arm enter-game detection only after the picker should exist ----
+    // Game boot: ~4s to reach name/server picker.
+    // We arm slightly after, plus instantly on user intent (click/key).
+    window.__doomzEnterArmed = false;
+
+    function armEnter(reason){
+      if (window.__doomzEnterArmed) return;
+      window.__doomzEnterArmed = true;
+      // console.log("ARMED enter detection:", reason, performance.now());
+    }
+
+    setTimeout(() => armEnter("timer"), 4800);
+    window.addEventListener("keydown",   () => armEnter("keydown"),   { once:true });
+    window.addEventListener("mousedown", () => armEnter("mousedown"), { once:true });
+    window.addEventListener("touchstart",() => armEnter("touchstart"),{ once:true });
+
+    // When we REALLY enter game, remove overlay completely
+    window.addEventListener("doomz:enteredGame", (ev) => {
+      // extra guard (should already be gated in JS too)
+      if (!window.__doomzEnterArmed) return;
+
       closeOverlay();
-      // Optional hard-remove DOM node
       const el = document.getElementById("discordOverlay");
       if (el) el.remove();
     });
@@ -332,11 +378,8 @@
     }
 
     function renderWidget(data){
-      if (typeof data?.presence_count === "number") {
-        onlineCountEl.textContent = `Online: ${data.presence_count}`;
-      } else {
-        onlineCountEl.textContent = "Online: ?";
-      }
+      const presence = (typeof data?.presence_count === "number") ? data.presence_count : null;
+      onlineCountEl.textContent = presence !== null ? `Online: ${presence}` : "Online: ?";
 
       const members = Array.isArray(data?.members) ? data.members : [];
 
