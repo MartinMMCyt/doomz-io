@@ -6,19 +6,117 @@
   <title>Doomz.io (sanitized)</title>
   <style>
     html, body { height: 100%; margin: 0; background: #111; overflow: hidden; }
-    #unityContainer { width: 100%; height: 100%; position: relative; }
+    #layout { height: 100%; width: 100%; display: flex; }
+    #unityContainer { flex: 1 1 auto; position: relative; min-width: 0; }
     canvas { width: 100% !important; height: 100% !important; display: block; }
+
+    /* Discord sidebar */
+    #discordSidebar {
+      width: 350px;
+      height: 100%;
+      flex: 0 0 350px;
+      background: #0e0f12;
+      border-left: 1px solid rgba(255,255,255,0.10);
+      display: flex;
+      flex-direction: column;
+    }
+    #discordHeader {
+      padding: 10px 10px 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      color: #ddd;
+      font: 12px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, sans-serif;
+    }
+    #discordHeader b { font-size: 12px; letter-spacing: 0.3px; }
+    #discordButtons { display: flex; gap: 6px; }
+    .btn {
+      appearance: none;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.06);
+      color: #ddd;
+      padding: 4px 8px;
+      border-radius: 8px;
+      cursor: pointer;
+      font: 12px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, sans-serif;
+    }
+    .btn:hover { background: rgba(255,255,255,0.10); }
+
+    #discordFrameWrap {
+      flex: 1 1 auto;
+      min-height: 0;
+      padding: 0 10px 10px;
+    }
+    #discordFrame {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      border-radius: 10px;
+      background: transparent;
+    }
+
+    /* If screen is too narrow, hide sidebar automatically */
+    @media (max-width: 920px) {
+      #discordSidebar { display: none; }
+    }
+
+    /* Collapsed mode */
+    body.discord-collapsed #discordSidebar { display: none; }
   </style>
 </head>
 <body>
-  <div id="unityContainer"></div>
+  <div id="layout">
+    <div id="unityContainer"></div>
 
-  <!-- Minimal chat sanitizer (replaces < > with [ ]) -->
+    <!-- Discord server widget sidebar -->
+    <aside id="discordSidebar" aria-label="Discord server widget">
+      <div id="discordHeader">
+        <b>Doomz Discord</b>
+        <div id="discordButtons">
+          <button class="btn" id="btnJoin" title="Open invite in a new tab">Join</button>
+          <button class="btn" id="btnHide" title="Hide sidebar">Hide</button>
+        </div>
+      </div>
+      <div id="discordFrameWrap">
+        <iframe
+          id="discordFrame"
+          src="https://discord.com/widget?id=1457850861035458704&theme=dark"
+          allowtransparency="true"
+          sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"
+          referrerpolicy="no-referrer"
+          loading="lazy">
+        </iframe>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Chat sanitizer + entered-game detector -->
   <script src="chat_sanitize.js"></script>
 
-  <!-- Unity loader (must exist in your build folder) -->
+  <!-- Unity loader -->
   <script src="doomz.js"></script>
   <script>
+    const inviteUrl = "https://discord.com/invite/doomzio";
+
+    document.getElementById("btnJoin").addEventListener("click", () => {
+      window.open(inviteUrl, "_blank", "noopener,noreferrer");
+    });
+
+    document.getElementById("btnHide").addEventListener("click", () => {
+      document.body.classList.add("discord-collapsed");
+    });
+
+    // Hide sidebar once we detect we've entered gameplay (no fullscreen/pointerlock needed)
+    window.addEventListener("doomz:enteredGame", () => {
+      document.body.classList.add("discord-collapsed");
+    });
+
+    // Optional: also hide if a flag is already set (in case event fired early)
+    if (window.__doomzEnteredGame) {
+      document.body.classList.add("discord-collapsed");
+    }
+
     UnityLoader.instantiate("unityContainer", "doomz.json", {});
   </script>
 </body>
