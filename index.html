@@ -7,19 +7,21 @@
   <style>
     :root{
       --bg:#0b0d12;
-      --text:rgba(255,255,255,.90);
+
+      /* Inspired by your banner: deep purple + gold */
+      --accent:#7c5cff;          /* purple accent */
+      --accent2:#f2c94c;         /* gold-ish */
+      --text:rgba(255,255,255,.92);
       --muted:rgba(255,255,255,.66);
-      --muted2:rgba(255,255,255,.52);
-      --border:rgba(255,255,255,.14);
-      --border2:rgba(255,255,255,.22);
-      --accent:#7c5cff;
-      --accent2:#34d1ff;
-      --shadow:0 18px 45px rgba(0,0,0,.45);
+      --muted2:rgba(255,255,255,.54);
+      --border:rgba(255,255,255,.16);
+      --border2:rgba(255,255,255,.24);
+      --shadow:0 18px 45px rgba(0,0,0,.48);
       --radius:18px;
 
-      /* glass panel */
-      --glass: rgba(15,20,32,.52);      /* transparency */
-      --glass2: rgba(10,12,18,.38);
+      /* glass */
+      --glassA: rgba(18, 16, 30, .56);
+      --glassB: rgba(10, 12, 18, .34);
     }
 
     html, body {
@@ -35,74 +37,34 @@
     #unityContainer { position:relative; width:100%; height:100%; }
     canvas { width:100% !important; height:100% !important; display:block; }
 
-    /* Overlay container */
+    /* Overlay: NOT full height; only what it needs */
     #discordOverlay {
       position: fixed;
       top: 14px;
       right: 14px;
-      bottom: 14px;
       width: 400px;
       z-index: 9999;
 
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-
-      transition: transform 180ms ease, opacity 180ms ease;
+      display: block;
     }
 
-    /* Hidden: slide off-screen but not permanent */
-    body.discord-collapsed #discordOverlay {
-      transform: translateX(420px);
-      opacity: 0;
-      pointer-events: none;
-    }
+    /* Hide completely (no toggle pill) */
+    body.discord-hidden #discordOverlay { display:none !important; }
 
-    /* Hide overlay on small screens */
+    /* Hide on small screens */
     @media (max-width: 1020px){
-      #discordOverlay { display:none; }
-      #discordTogglePill { display:none !important; }
+      #discordOverlay{ display:none; }
     }
-
-    /* Floating toggle pill (always accessible when hidden) */
-    #discordTogglePill{
-      position: fixed;
-      top: 14px;
-      right: 14px;
-      z-index: 10000;
-
-      display: none;
-      align-items: center;
-      gap: 10px;
-      padding: 10px 12px;
-
-      border-radius: 999px;
-      border: 1px solid var(--border2);
-      background: rgba(15,20,32,.58);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-
-      box-shadow: var(--shadow);
-      cursor: pointer;
-      user-select: none;
-      font-size: 12px;
-    }
-    #discordTogglePill .dot{
-      width: 9px; height: 9px; border-radius: 999px;
-      background: var(--accent);
-      box-shadow: 0 0 0 3px rgba(124,92,255,.20);
-    }
-    body.discord-collapsed #discordTogglePill { display:flex; }
 
     /* Glass card */
     .card{
-      border: 1px solid rgba(255,255,255,.14);
+      border: 1px solid var(--border);
       border-radius: var(--radius);
       background:
-        radial-gradient(120% 100% at 10% 0%, rgba(124,92,255,.26) 0%, rgba(124,92,255,.08) 40%, rgba(0,0,0,0) 72%),
-        radial-gradient(130% 110% at 90% 20%, rgba(52,209,255,.18) 0%, rgba(52,209,255,.06) 35%, rgba(0,0,0,0) 70%),
-        linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,0)),
-        var(--glass);
+        radial-gradient(120% 110% at 12% 0%, rgba(124,92,255,.26) 0%, rgba(124,92,255,.09) 45%, rgba(0,0,0,0) 75%),
+        radial-gradient(130% 120% at 90% 20%, rgba(242,201,76,.16) 0%, rgba(242,201,76,.05) 35%, rgba(0,0,0,0) 70%),
+        linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,0)),
+        var(--glassA);
       backdrop-filter: blur(14px);
       -webkit-backdrop-filter: blur(14px);
       box-shadow: var(--shadow);
@@ -123,7 +85,7 @@
     }
     #guildName{
       font-size: 16px;
-      font-weight: 850;
+      font-weight: 900;
       letter-spacing: .2px;
       white-space: nowrap;
       overflow: hidden;
@@ -137,6 +99,7 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
+
     #statsRow{
       margin-top: 10px;
       display:flex;
@@ -178,9 +141,9 @@
     .btn:hover{ background: rgba(255,255,255,.10); }
 
     .btnPrimary{
-      border: 1px solid rgba(124,92,255,.55);
-      background: rgba(124,92,255,.20);
-      font-weight: 750;
+      border: 1px solid rgba(242,201,76,.55);
+      background: rgba(242,201,76,.16);
+      font-weight: 850;
     }
     .btnPrimary:hover{ filter: brightness(1.1); }
 
@@ -198,9 +161,7 @@
       border: 1px solid rgba(255,255,255,.16);
       background: rgba(0,0,0,.18);
       object-fit: cover;
-      transition: transform 120ms ease;
     }
-    .avatar:hover{ transform: translateY(-1px) scale(1.03); }
     #moreText{ color: var(--muted2); font-size: 12px; margin-left: 2px; }
 
     /* List */
@@ -209,7 +170,6 @@
       display:flex;
       flex-direction:column;
       gap: 8px;
-      min-height: 0;
     }
     #listTitle{
       display:flex;
@@ -218,14 +178,16 @@
       color: var(--muted);
       font-size: 12px;
     }
+
+    /* Not full-height: cap the list so card stays compact */
     #members{
       border: 1px solid rgba(255,255,255,.10);
       background: rgba(0,0,0,.14);
       border-radius: 14px;
       overflow:auto;
-      flex: 1 1 auto;
-      min-height: 0;
+      max-height: 260px; /* <-- keeps overlay compact */
     }
+
     .member{
       display:flex;
       align-items:center;
@@ -274,6 +236,7 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      max-width: 62%;
     }
   </style>
 </head>
@@ -281,15 +244,9 @@
 <body>
   <div id="unityContainer"></div>
 
-  <!-- Toggle pill appears only when panel hidden -->
-  <div id="discordTogglePill" title="Show Discord panel">
-    <span class="dot"></span>
-    <span>Discord</span>
-  </div>
-
-  <!-- Glass overlay panel -->
+  <!-- Glass overlay panel (picker screen only) -->
   <div id="discordOverlay" aria-label="Discord server panel overlay">
-    <div class="card" style="display:flex; flex-direction:column; min-height:0; height:100%;">
+    <div class="card">
       <div id="hero">
         <div id="heroTop">
           <div style="min-width:0">
@@ -297,7 +254,7 @@
             <div id="tagline">Official community • events • updates • squads</div>
           </div>
           <div class="btnRow">
-            <button class="btn" id="btnHide">Hide</button>
+            <button class="btn" id="btnClose" title="Close until reload">✕</button>
           </div>
         </div>
 
@@ -314,11 +271,12 @@
           <span>Online now</span>
           <span id="updatedAt"></span>
         </div>
+
         <div id="members" role="list" aria-label="Online members list"></div>
 
         <div id="footer">
-          <div id="footerHint">Join Doomz.io 2 on Discord</div>
-          <button class="btn btnPrimary" id="joinBtn">Join Discord</button>
+          <div id="footerHint">Join the Doomz.io 2 Discord</div>
+          <button class="btn btnPrimary" id="joinBtn">Join</button>
         </div>
       </div>
     </div>
@@ -340,16 +298,23 @@
     const membersEl = document.getElementById("members");
     const updatedAtEl = document.getElementById("updatedAt");
 
-    const setCollapsed = (v) => document.body.classList.toggle("discord-collapsed", !!v);
+    // Close until reload
+    function closeOverlay() {
+      document.body.classList.add("discord-hidden");
+    }
 
-    document.getElementById("btnHide").addEventListener("click", () => setCollapsed(true));
-    document.getElementById("discordTogglePill").addEventListener("click", () => setCollapsed(false));
+    document.getElementById("btnClose").addEventListener("click", closeOverlay);
     document.getElementById("joinBtn").addEventListener("click", () => {
       window.open(inviteUrl, "_blank", "noopener,noreferrer");
     });
 
-    // Auto-hide when we detect entering gameplay — NOT permanent.
-    window.addEventListener("doomz:enteredGame", () => setCollapsed(true));
+    // Entered game => remove everything (also prevents lingering 2s)
+    window.addEventListener("doomz:enteredGame", () => {
+      closeOverlay();
+      // Optional hard-remove DOM node
+      const el = document.getElementById("discordOverlay");
+      if (el) el.remove();
+    });
 
     function fmtTime(d){
       const hh = String(d.getHours()).padStart(2,'0');
@@ -426,7 +391,7 @@
         if(!res.ok) throw new Error("bad status");
         const data = await res.json();
         renderWidget(data);
-      }catch(e){
+      }catch{
         widgetStateEl.textContent = "Widget: unavailable";
         onlineCountEl.textContent = "Online: ?";
         updatedAtEl.textContent = "";
@@ -439,12 +404,9 @@
       }
     }
 
-    // Start shown every refresh/load (nothing permanent)
-    setCollapsed(false);
     refreshDiscordWidget();
     setInterval(refreshDiscordWidget, 30000);
 
-    // Boot Unity
     UnityLoader.instantiate("unityContainer", "doomz.json", {});
   </script>
 </body>
